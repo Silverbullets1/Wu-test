@@ -34,7 +34,7 @@
             font-weight: bold;
             text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
             margin-bottom: 20px;
-            font-size: 12px; /* Slightly smaller to fit mobile screens better */
+            font-size: 12px;
             line-height: 1.2;
             overflow-x: auto;
         }
@@ -103,7 +103,7 @@
 
         .timestamp { color: var(--text-muted); margin-right: 5px; }
         
-        /* Made [HIT] tag strictly green */
+        /* [HIT] tag is strictly green */
         .tag-hit { color: var(--text-main); font-weight: bold; } 
         .tag-custom { color: var(--text-purple); font-weight: bold; }
         
@@ -214,7 +214,6 @@
             return rand(formats);
         }
 
-        // Helper to get current time for logs
         function getTimestamp() {
             const now = new Date();
             return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
@@ -234,10 +233,14 @@
             const tag = isCustom ? '[CUSTOM]' : '[HIT]';
             const tagClass = isCustom ? 'tag-custom' : 'tag-hit';
             
-            const mValue = Math.floor(1000000000 + Math.random() * 9000000000);
+            // Logic change: Only generate and append 'M=' if it is a HIT
+            let suffix = "";
+            if (!isCustom) {
+                const mValue = Math.floor(1000000000 + Math.random() * 9000000000);
+                suffix = ` | M = ${mValue}`;
+            }
             
-            // Includes timestamp span
-            return `<div class="log-entry"><span class="timestamp">${time}</span> <span class="${tagClass}">${tag}</span> ${email}:${password} | M = ${mValue}</div>`;
+            return `<div class="log-entry"><span class="timestamp">${time}</span> <span class="${tagClass}">${tag}</span> ${email}:${password}${suffix}</div>`;
         }
         
         for(let i=0; i<8; i++) {
@@ -261,7 +264,6 @@
                 const newLog = generateFakeLog(isCustomHit);
                 logContainer.insertAdjacentHTML('afterbegin', newLog);
                 
-                // Allow a few more logs to show to utilize the fixed height box
                 if (logContainer.children.length > 18) {
                     logContainer.removeChild(logContainer.lastChild);
                 }
