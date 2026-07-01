@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WU Checker - Terminal Interface</title>
+    <style>
+        /* CSS Variables */
+        :root {
+            --bg-color: #0a0a0a;
+            --text-main: #00ff00; /* Green */
+            --text-white: #ffffff;
+            --text-red: #ff5555;
+            --text-purple: #aa88ff;
+            --text-muted: #666666;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+            text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
+        }
+
+        .container {
+            max-width: 800px;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            margin-bottom: 20px;
+            font-size: 12px; /* Slightly smaller to fit mobile screens better */
+            line-height: 1.2;
+            overflow-x: auto;
+        }
+
+        .info-text {
+            margin-bottom: 20px;
+        }
+
+        .divider {
+            border-top: 1px solid var(--text-main);
+            margin: 10px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 5px 20px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .stats-grid div {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .val-white { color: var(--text-white); }
+        .val-red { color: var(--text-red); }
+        .val-purple { color: var(--text-purple); }
+        .val-green { color: var(--text-main); }
+
+        .progress-bar-container {
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .logs-section {
+            margin-top: 20px;
+        }
+
+        .log-header {
+            color: var(--text-purple);
+            margin-bottom: 10px;
+        }
+
+        /* Fixed height for logs to keep UI rigid */
+        #log-container {
+            min-height: 350px; 
+            overflow: hidden;
+        }
+
+        /* Fade-in animation for new logs */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-entry {
+            color: #dddddd;
+            margin-bottom: 4px;
+            word-wrap: break-word;
+            animation: fadeInDown 0.25s ease-out forwards;
+        }
+
+        .timestamp { color: var(--text-muted); margin-right: 5px; }
+        
+        /* Made [HIT] tag strictly green */
+        .tag-hit { color: var(--text-main); font-weight: bold; } 
+        .tag-custom { color: var(--text-purple); font-weight: bold; }
+        
+        .footer {
+            margin-top: 20px;
+            color: var(--text-main);
+            font-weight: bold;
+            border-top: 1px dashed var(--text-main);
+            padding-top: 10px;
+            display: inline-block;
+        }
+
+        .download-btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+            color: var(--text-white);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <div class="ascii-art" aria-hidden="true">
+██╗    ██╗██╗   ██╗     ██████╗██╗  ██╗███████╗██████╗ ██╗  ██╗███████╗██████╗ 
+██║    ██║██║   ██║    ██╔════╝██║  ██║██╔════╝██╔════╝ ██║ ██╔╝██╔════╝██╔══██╗
+██║ █╗ ██║██║   ██║    ██║     ███████║█████╗  ██║      █████╔╝ █████╗  ██████╔╝
+██║███╗██║██║   ██║    ██║     ██╔══██║██╔══╝  ██║      ██╔═██╗ ██╔══╝  ██╔══██╗
+╚███╔███╔╝╚██████╔╝    ╚██████╗██║  ██║███████╗╚██████╗ ██║  ██╗███████╗██║  ██║
+ ╚══╝╚══╝  ╚═════╝      ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+        </div>
+
+        <section class="info-text">
+            ~ Western Union Account Checker v2.0<br>
+            ~ Full cap (MTCN)
+        </section>
+
+        <div class="divider"></div>
+
+        <section class="stats-grid">
+            <div><span>Hits:</span> <span class="val-white" id="stat-hits">14</span></div>
+            <div><span>Custom:</span> <span class="val-white" id="stat-custom">7</span></div>
+            <div><span>Errors:</span> <span class="val-red">2</span></div>
+            
+            <div><span>Fails:</span> <span class="val-red" id="stat-fails">182</span></div>
+            <div><span>Retries:</span> <span class="val-purple">12</span></div>
+            <div><span>Skipped:</span> <span class="val-purple">8041</span></div>
+        </section>
+        
+        <section class="progress-bar-container">
+            <div><span>Checked:</span> <span class="val-purple" id="stat-checked">215</span><span class="val-white">/500000</span></div>
+            <div><span>CPM:</span> <span class="val-white" id="stat-cpm">412</span></div>
+            <div><span>Progress:</span> <span class="val-purple" id="stat-progress">0.0430%</span></div>
+        </section>
+
+        <div class="divider"></div>
+
+        <section class="logs-section">
+            <div class="log-header">Recent Hits:</div>
+            <div id="log-container">
+            </div>
+        </section>
+
+        <footer class="footer">
+            <span id="download-trigger" class="download-btn">[+] capture full information in .TXT file</span>
+        </footer>
+    </main>
+
+    <script>
+        const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'aol.com', 'hotmail.com', 'icloud.com'];
+        const firstNames = ['james', 'mary', 'robert', 'patricia', 'john', 'jennifer', 'michael', 'linda', 'david', 'elizabeth', 'william', 'barbara', 'richard', 'susan', 'joseph', 'jessica'];
+        const lastNames = ['smith', 'johnson', 'williams', 'brown', 'jones', 'garcia', 'miller', 'davis', 'rodriguez', 'martinez', 'hernandez', 'lopez', 'gonzalez', 'wilson', 'anderson', 'thomas'];
+        const passBases = ['Password', 'Qwerty', 'Summer', 'Winter', 'Spring', 'Autumn', 'Dragon', 'Monkey', 'Sunshine', 'Welcome', 'Shadow', 'Hunter', 'Butterfly', 'Football', 'Baseball'];
+        const passSpecials = ['!', '@', '#', '$', '%', '*', '?', '!!', '!@#'];
+
+        const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const randNum = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        function generateRealisticEmail() {
+            const f = rand(firstNames);
+            const l = rand(lastNames);
+            const year = randNum(1950, 2005);
+            const num = randNum(1, 99);
+            const domain = rand(domains);
+            
+            const formats = [
+                `${f}.${l}@${domain}`,
+                `${f[0]}${l}${year}@${domain}`,
+                `${f}${l.substring(0,3)}@${domain}`,
+                `${l}.${f}${num}@${domain}`,
+                `${f}_${l}@${domain}`
+            ];
+            return rand(formats);
+        }
+
+        function generateRealisticPassword() {
+            const base = rand(passBases);
+            const num = randNum(1, 9999);
+            const special = rand(passSpecials);
+            
+            const formats = [
+                `${base}${num}${special}`,
+                `${base}${special}${num}`,
+                `${num}${base}${special}`
+            ];
+            return rand(formats);
+        }
+
+        // Helper to get current time for logs
+        function getTimestamp() {
+            const now = new Date();
+            return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+        }
+
+        const logContainer = document.getElementById('log-container');
+        let hits = 14;
+        let fails = 182;
+        let custom = 7;
+        let checked = 215;
+        const totalToCheck = 500000;
+        
+        function generateFakeLog(isCustom) {
+            const time = getTimestamp();
+            const email = generateRealisticEmail();
+            const password = generateRealisticPassword();
+            const tag = isCustom ? '[CUSTOM]' : '[HIT]';
+            const tagClass = isCustom ? 'tag-custom' : 'tag-hit';
+            
+            const mValue = Math.floor(1000000000 + Math.random() * 9000000000);
+            
+            // Includes timestamp span
+            return `<div class="log-entry"><span class="timestamp">${time}</span> <span class="${tagClass}">${tag}</span> ${email}:${password} | M = ${mValue}</div>`;
+        }
+        
+        for(let i=0; i<8; i++) {
+            const isCustom = Math.random() > 0.6;
+            logContainer.insertAdjacentHTML('beforeend', generateFakeLog(isCustom));
+        }
+        
+        setInterval(() => {
+            checked += randNum(1, 5);
+            fails += randNum(0, 4);
+            
+            if(Math.random() > 0.8) {
+                const isCustomHit = Math.random() > 0.6;
+                
+                if (isCustomHit) {
+                    custom++;
+                } else {
+                    hits++;
+                }
+                
+                const newLog = generateFakeLog(isCustomHit);
+                logContainer.insertAdjacentHTML('afterbegin', newLog);
+                
+                // Allow a few more logs to show to utilize the fixed height box
+                if (logContainer.children.length > 18) {
+                    logContainer.removeChild(logContainer.lastChild);
+                }
+            }
+
+            const cpm = Math.floor(400 + (Math.random() * 50 - 25));
+            const progressPercent = ((checked / totalToCheck) * 100).toFixed(4);
+
+            document.getElementById('stat-checked').textContent = checked;
+            document.getElementById('stat-fails').textContent = fails;
+            document.getElementById('stat-hits').textContent = hits;
+            document.getElementById('stat-custom').textContent = custom;
+            document.getElementById('stat-cpm').textContent = cpm;
+            document.getElementById('stat-progress').textContent = `${progressPercent}%`;
+
+        }, 800); 
+
+        // Download functionality
+        document.getElementById('download-trigger').addEventListener('click', () => {
+            const logEntries = document.querySelectorAll('.log-entry');
+            if (logEntries.length === 0) return; 
+
+            let fileContent = "=== WU Checker v2.0 - Captured Hits ===\n\n";
+            logEntries.forEach(entry => {
+                fileContent += entry.textContent + "\n"; 
+            });
+
+            const blob = new Blob([fileContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `wu_hits_capture_${new Date().getTime()}.txt`; 
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
