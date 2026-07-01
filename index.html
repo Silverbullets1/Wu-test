@@ -153,6 +153,10 @@
             <div><span>Fails:</span> <span class="val-red" id="stat-fails">182</span></div>
             <div><span>Retries:</span> <span class="val-purple">12</span></div>
             <div><span>Skipped:</span> <span class="val-purple">8041</span></div>
+
+            <div><span>Proxies:</span> <span class="val-white" id="stat-proxies-total">8500</span></div>
+            <div><span>Live:</span> <span class="val-green" id="stat-proxies-live">8450</span></div>
+            <div><span>Banned:</span> <span class="val-red" id="stat-proxies-banned">50</span></div>
         </section>
         
         <section class="progress-bar-container">
@@ -214,20 +218,36 @@
             return rand(formats);
         }
 
+        // Helper to generate a fake proxy IP:PORT
+        function generateFakeProxy() {
+            const ip1 = randNum(1, 255);
+            const ip2 = randNum(0, 255);
+            const ip3 = randNum(0, 255);
+            const ip4 = randNum(1, 255);
+            const port = randNum(1000, 9999);
+            return `[${ip1}.${ip2}.${ip3}.${ip4}:${port}]`;
+        }
+
         function getTimestamp() {
             const now = new Date();
             return `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
         }
 
         const logContainer = document.getElementById('log-container');
+        
+        // Initial Statistics
         let hits = 14;
         let fails = 182;
         let custom = 7;
         let checked = 215;
         const totalToCheck = 500000;
         
+        let totalProxies = 8500;
+        let bannedProxies = 50;
+        
         function generateFakeLog(isCustom) {
             const time = getTimestamp();
+            const proxy = generateFakeProxy();
             const email = generateRealisticEmail();
             const password = generateRealisticPassword();
             const tag = isCustom ? '[CUSTOM]' : '[HIT]';
@@ -240,7 +260,7 @@
                 suffix = ` | M = ${mValue}`;
             }
             
-            return `<div class="log-entry"><span class="timestamp">${time}</span> <span class="${tagClass}">${tag}</span> ${email}:${password}${suffix}</div>`;
+            return `<div class="log-entry"><span class="timestamp">${time}</span> <span class="timestamp">${proxy}</span> <span class="${tagClass}">${tag}</span> ${email}:${password}${suffix}</div>`;
         }
         
         for(let i=0; i<8; i++) {
@@ -251,6 +271,11 @@
         setInterval(() => {
             checked += randNum(1, 5);
             fails += randNum(0, 4);
+            
+            // Simulate proxy banning
+            if(Math.random() > 0.85) {
+                bannedProxies += randNum(1, 3);
+            }
             
             if(Math.random() > 0.8) {
                 const isCustomHit = Math.random() > 0.6;
@@ -271,6 +296,7 @@
 
             const cpm = Math.floor(400 + (Math.random() * 50 - 25));
             const progressPercent = ((checked / totalToCheck) * 100).toFixed(4);
+            const liveProxies = totalProxies - bannedProxies;
 
             document.getElementById('stat-checked').textContent = checked;
             document.getElementById('stat-fails').textContent = fails;
@@ -278,6 +304,10 @@
             document.getElementById('stat-custom').textContent = custom;
             document.getElementById('stat-cpm').textContent = cpm;
             document.getElementById('stat-progress').textContent = `${progressPercent}%`;
+            
+            // Update proxy UI
+            document.getElementById('stat-proxies-live').textContent = liveProxies;
+            document.getElementById('stat-proxies-banned').textContent = bannedProxies;
 
         }, 800); 
 
